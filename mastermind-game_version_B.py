@@ -1,0 +1,157 @@
+##
+##     mastermind-game 2026-09-26  Version B von Manfred Lagler - regall
+##
+
+import random
+
+class Mastermind:
+    def __init__(self):
+        self.colours = ["red", "green", "blue", "yellow", "orange", "pink"]
+        self.code_length = 4
+        self.max_attempts = 12
+        self.secret_code = []
+        self.guesses = []
+        
+    def generate_secret_code(self):
+        """Generiert einen zufälligen 4-Farben-Code mit Wiederholung."""
+        self.secret_code = [random.choice(self.colours) for _ in range(self.code_length)]
+        print("Geheimer Code wurde generiert!")
+        
+    def display_colours(self):
+        """Zeigt die verfügbaren Farben an."""
+        print("\nVerfügbare Farben:")
+        for i, colour in enumerate(self.colours, 1):
+            print(f"{i}. {colour}")
+            
+    def get_player_guess(self):
+        """Fragt den Spieler nach seinem Guess."""
+        while True:
+            print(f"\nVersuch {len(self.guesses) + 1}/{self.max_attempts}")
+            print("Bitte wählen Sie 4 Farben (durch Leerzeichen getrennt):")
+            print("Beispiel: red green blue yellow")
+            
+            guess_input = input("Ihr Guess: ").lower().split()
+            
+            if len(guess_input) != self.code_length:
+                print(f"Fehler! Bitte genau {self.code_length} Farben eingeben.")
+                continue
+                
+            # Prüfen, ob alle Farben gültig sind
+            valid_colours = all(color in self.colours for color in guess_input)
+            if not valid_colours:
+                print("Fehler! Bitte nur gültige Farben verwenden.")
+                continue
+                
+            return guess_input
+            
+    def evaluate_guess(self, guess):
+        """
+        Bewertet den Guess des Spielers.
+        Returns: (blacks, whites)
+        - Blacks: Richtige Farbe an richtiger Position
+        - Whites: Richtige Farbe an falscher Position
+        """
+        blacks = 0
+        whites = 0
+        
+        # Kopien erstellen, um Original nicht zu verändern
+        secret_copy = self.secret_code.copy()
+        guess_copy = guess.copy()
+        
+        # Zuerst Blacks zählen
+        for i in range(self.code_length):
+            if guess_copy[i] == secret_copy[i]:
+                blacks += 1
+                secret_copy[i] = None  # Markiere als verwendet
+                guess_copy[i] = None   # Markiere als verwendet
+                
+        # Dann Whites zählen
+        for i in range(self.code_length):
+            if guess_copy[i] is not None:  # Nicht bereits als Black gezählt
+                if guess_copy[i] in secret_copy:
+                    whites += 1
+                    # Finde und markiere die entsprechende Farbe im secret
+                    for j in range(self.code_length):
+                        if secret_copy[j] == guess_copy[i]:
+                            secret_copy[j] = None
+                            break
+                            
+        return blacks, whites
+        
+    def display_evaluation(self, blacks, whites):
+        """Zeigt die Bewertung des Guesses an."""
+        print(f"Bewertung: {blacks} Black(s), {whites} White(s)")
+        print("Black = Richtige Farbe an richtiger Position")
+        print("White = Richtige Farbe an falscher Position")
+        
+    def display_guesses(self):
+        """Zeigt alle bisherigen Versuche an."""
+        if self.guesses:
+            print("\nBisherige Versuche:")
+            for i, (guess, (blacks, whites)) in enumerate(self.guesses, 1):
+                print(f"Versuch {i}: {guess} → {blacks}B, {whites}W")
+                
+    def play_game(self):
+        """Startet das Mastermind-Spiel."""
+        print("=" * 50)
+        print("   WILLKOMMEN BEI MASTERMIND!")
+        print("=" * 50)
+        print(f"Farben: {', '.join(self.colours)}")
+        print(f"Knacken Sie den {self.code_length}-stelligen Code!")
+        print(f"Sie haben maximal {self.max_attempts} Versuche.")
+        
+        self.generate_secret_code()
+        self.display_colours()
+        
+        game_over = False
+        
+        while not game_over:
+            # Hole Guess vom Spieler
+            guess = self.get_player_guess()
+            
+            # Bewerte den Guess
+            blacks, whites = self.evaluate_guess(guess)
+            
+            # Speichere den Guess mit Bewertung
+            self.guesses.append((guess, (blacks, whites)))
+            
+            # Zeige Bewertung
+            self.display_evaluation(blacks, whites)
+            
+            # Zeige alle bisherigen Versuche
+            self.display_guesses()
+            
+            # Prüfe ob gewonnen
+            if blacks == self.code_length:
+                print("\n" + "=" * 50)
+                print("   GLÜCKWUNSCH! Sie haben den Code geknackt!")
+                print("=" * 50)
+                print(f"Ihr Geheimnis war: {self.secret_code}")
+                print(f"Sie haben {len(self.guesses)} Versuche gebraucht!")
+                game_over = True
+                break
+                
+            # Prüfe ob keine Versuche mehr übrig
+            if len(self.guesses) >= self.max_attempts:
+                print("\n" + "=" * 50)
+                print("   SPIELE ENDE! Keine Versuche mehr übrig.")
+                print("=" * 50)
+                print(f"Ihr Geheimnis war: {self.secret_code}")
+                game_over = True
+                break
+                
+        # Frage nach Neuem Spiel
+        play_again = input("\nMöchten Sie eine neue Runde spielen? (j/n): ").lower()
+        if play_again == 'j':
+            self.reset_game()
+            self.play_game()
+            
+    def reset_game(self):
+        """Setzt das Spiel zurück."""
+        self.guesses = []
+        self.generate_secret_code()
+        print("\nNeues Spiel gestartet!")
+
+if __name__ == "__main__":
+    game = Mastermind()
+    game.play_game()
